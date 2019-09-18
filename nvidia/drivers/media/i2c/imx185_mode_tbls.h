@@ -961,6 +961,21 @@ static imx185_reg imx185_1920x1080_crop_10bit_30fps[] = {
 	{IMX185_TABLE_END, 0x00}
 };
 
+static imx185_reg imx185_2_lane_conf[] = {
+    {0x3303, 0x00},
+    {0x3305, 0x01},
+    {0x332c, 0x40},
+    {0x3340, 0x01},
+    {0x3343, 0x68},
+    {0x3344, 0x20},
+    {0x3345, 0x40},
+    {0x3346, 0x28},
+    {0x3347, 0x20},
+    {0x3348, 0x18},
+    {0x3349, 0x78},
+    {IMX185_TABLE_END, 0x00}
+};
+
 enum {
 	IMX185_MODE_1920X1080_CROP_30FPS,
 	IMX185_MODE_1920X1080_CROP_10BIT_30FPS,
@@ -969,6 +984,7 @@ enum {
 	IMX185_MODE_1920X1080_CROP_HDR_30FPS,
 	IMX185_MODE_START_STREAM,
 	IMX185_MODE_STOP_STREAM,
+	IMX185_MODE_2_LANE,	
 	IMX185_MODE_TEST_PATTERN
 };
 
@@ -983,6 +999,7 @@ static imx185_reg *mode_table[] = {
 		imx185_1920x1080_hdr_crop_30fps,
 	[IMX185_MODE_START_STREAM] = imx185_start,
 	[IMX185_MODE_STOP_STREAM] = imx185_stop,
+	[IMX185_MODE_2_LANE] = imx185_2_lane_conf,
 	[IMX185_MODE_TEST_PATTERN] = tp_colorbars,
 };
 

@@ -632,6 +632,8 @@ static int imx185_set_mode(struct tegracam_device *tc_dev)
 static int imx185_start_streaming(struct tegracam_device *tc_dev)
 {
 	struct imx185 *priv = (struct imx185 *)tegracam_get_privdata(tc_dev);
+	struct camera_common_data *s_data = tc_dev->s_data;
+	struct device *dev = tc_dev->dev;
 	int err;
 
 	if (test_mode) {
@@ -640,6 +642,13 @@ static int imx185_start_streaming(struct tegracam_device *tc_dev)
 		if (err)
 			return err;
 	}
+	
+    if(s_data->numlanes == 2){
+        dev_dbg(dev,"%s: Setting to 2 CSI Lanes\n",__func__);
+        err = imx185_write_table(priv, mode_table[IMX185_MODE_2_LANE]);
+        if (err)
+            return err;
+    }
 
 	err = imx185_write_table(priv,
 		mode_table[IMX185_MODE_START_STREAM]);

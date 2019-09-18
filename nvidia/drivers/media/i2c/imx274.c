@@ -167,10 +167,9 @@ static inline int imx274_read_reg(struct camera_common_data *s_data,
 {
 	int err = 0;
 	u32 reg_val = 0;
-
+	
 	err = regmap_read(s_data->regmap, addr, &reg_val);
-	*val = reg_val & 0xFF;
-
+	*val = reg_val & 0xFF;	
 	return err;
 }
 
@@ -728,11 +727,11 @@ static int imx274_power_on(struct camera_common_data *s_data)
 	}
 
 	if (pw->reset_gpio)
-		gpio_set_value(pw->reset_gpio, 0);
+		gpio_set_value_cansleep(pw->reset_gpio, 0);
 	if (pw->af_gpio)
-		gpio_set_value(pw->af_gpio, 1);
+		gpio_set_value_cansleep(pw->af_gpio, 1);
 	if (pw->pwdn_gpio)
-		gpio_set_value(pw->pwdn_gpio, 0);
+		gpio_set_value_cansleep(pw->pwdn_gpio, 0);
 	usleep_range(10, 20);
 
 	if (pw->dvdd)
@@ -752,9 +751,9 @@ static int imx274_power_on(struct camera_common_data *s_data)
 
 	usleep_range(1, 2);
 	if (pw->reset_gpio)
-		gpio_set_value(pw->reset_gpio, 1);
+		gpio_set_value_cansleep(pw->reset_gpio, 1);
 	if (pw->pwdn_gpio)
-		gpio_set_value(pw->pwdn_gpio, 1);
+		gpio_set_value_cansleep(pw->pwdn_gpio, 1);
 
 	/* 1.2v input is generated on module board, adds more latency */
 	usleep_range(10000, 10010);
@@ -764,7 +763,7 @@ static int imx274_power_on(struct camera_common_data *s_data)
 
 imx274_dvdd_fail:
 	if (pw->af_gpio)
-		gpio_set_value(pw->af_gpio, 0);
+		gpio_set_value_cansleep(pw->af_gpio, 0);
 
 imx274_iovdd_fail:
 	if (pw->dvdd)
@@ -798,11 +797,11 @@ static int imx274_power_off(struct camera_common_data *s_data)
 
 	usleep_range(1, 2);
 	if (pw->reset_gpio)
-		gpio_set_value(pw->reset_gpio, 0);
+		gpio_set_value_cansleep(pw->reset_gpio, 0);
 	if (pw->af_gpio)
-		gpio_set_value(pw->af_gpio, 0);
+		gpio_set_value_cansleep(pw->af_gpio, 0);
 	if (pw->pwdn_gpio)
-		gpio_set_value(pw->pwdn_gpio, 0);
+		gpio_set_value_cansleep(pw->pwdn_gpio, 0);
 	usleep_range(1, 2);
 
 	if (pw->avdd)
@@ -948,7 +947,10 @@ static int imx274_set_mode(struct tegracam_device *tc_dev)
 	struct device *dev = s_data->dev;
 	int err;
 
-	err = imx274_write_table(priv, mode_table[s_data->mode]);
+	if(s_data->numlanes == 2)
+		err = imx274_write_table(priv, mode_table[s_data->mode]);
+	else
+		err = imx274_write_table(priv, mode_table_4lane[s_data->mode]);
 	if (err)
 		return err;
 
@@ -971,9 +973,17 @@ static int imx274_start_streaming(struct tegracam_device *tc_dev)
 	struct imx274 *priv = (struct imx274 *)tegracam_get_privdata(tc_dev);
 	struct camera_common_data *s_data = tc_dev->s_data;
 	struct device *dev = s_data->dev;
-	int err;
+	int err;	
 
 	mutex_lock(&priv->streaming_lock);
+	if(s_data->numlanes == 2){
+		err = imx274_write_table(priv, mode_table[IMX274_MODE_2_LANE]);
+		if (err) {
+			mutex_unlock(&priv->streaming_lock);
+			goto exit;
+		}
+	}
+	
 	err = imx274_write_table(priv, mode_table[IMX274_MODE_START_STREAM]);
 	if (err) {
 		mutex_unlock(&priv->streaming_lock);
@@ -1165,13 +1175,16 @@ static int imx274_debugfs_streaming_write(void *data, u64 val)
 	bool enable = (val != 0);
 	int mode_index = enable ?
 		(IMX274_MODE_START_STREAM) : (IMX274_MODE_STOP_STREAM);
+	struct camera_common_data *s_data = priv->s_data;
 
 	dev_info(&client->dev, "%s: %s sensor\n",
 			__func__, (enable ? "enabling" : "disabling"));
 
 	mutex_lock(&priv->streaming_lock);
-
-	err = imx274_write_table(priv, mode_table[mode_index]);
+	if(s_data->numlanes == 2)	
+		err = imx274_write_table(priv, mode_table[mode_index]);
+	else
+		err = imx274_write_table(priv, mode_table_4lane[mode_index]);
 	if (err) {
 		dev_err(&client->dev, "%s: error setting sensor streaming\n",
 			__func__);

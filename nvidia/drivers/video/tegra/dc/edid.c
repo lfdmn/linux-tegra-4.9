@@ -610,11 +610,21 @@ int tegra_edid_get_ex_hdr_cap_info(struct tegra_edid *edid,
 
 inline bool tegra_edid_is_rgb_quantization_selectable(struct tegra_edid *edid)
 {
+
+	if (!edid || !edid->data) {
+		pr_warn("edid invalid\n");
+		return 0;
+	}
 	return edid->data->rgb_quant_selectable;
 }
 
 inline bool tegra_edid_is_yuv_quantization_selectable(struct tegra_edid *edid)
 {
+
+	if (!edid || !edid->data) {
+		pr_warn("edid invalid\n");
+		return 0;
+	}
 	return edid->data->yuv_quant_selectable;
 }
 
