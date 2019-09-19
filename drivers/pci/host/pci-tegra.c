@@ -4668,16 +4668,17 @@ static void pcie_delayed_detect(struct work_struct *work)
 	ret = tegra_pcie_probe_complete(pcie);
 	if (ret || !pcie->num_ports) {
 		pm_runtime_put_sync(pcie->dev);
-		goto release_regulators;
+		//goto release_regulators;
 	}
 	return;
-
+/*
 release_regulators:
 	devm_kfree(pcie->dev, pcie->pcie_regulators);
 	devm_kfree(pcie->dev, pcie->plat_data);
 	pci_free_host_bridge(pcie->host);
 	platform_set_drvdata(pdev, NULL);
 	return;
+*/
 }
 
 #ifdef CONFIG_THERMAL
@@ -5167,6 +5168,8 @@ static void __exit tegra_pcie_exit_driver(void)
 	platform_driver_unregister(&tegra_pcie_driver);
 }
 
-module_init(tegra_pcie_init_driver);
+
+fs_initcall(tegra_pcie_init_driver);
+//module_init(tegra_pcie_init_driver);
 module_exit(tegra_pcie_exit_driver);
 MODULE_LICENSE("GPL v2");
